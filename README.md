@@ -30,7 +30,7 @@ Current support is for English units. The flow values must be in `cfs`
 
 1. Download Baxter sample data from ` s3://fimc-data/flows2fim/sample_data/v0_2_0/Baxter` if you don't have a dataset already.
 
-1. To create a control file from the 100yr flows file run `flows2fim controls -db "Baxter/ripple.gpkg" -f "Baxter/flows/flows_100yr_cfs.csv" -o "Baxter/controls_100yr.csv" -sids 2821866`
+1. To create a controls file from the 100yr flows file run `flows2fim controls -db "Baxter/ripple.gpkg" -f "Baxter/flows/flows_100yr_cfs.csv" -o "Baxter/controls_100yr.csv" -sids 2821866`
 
 1. To create Depth VRT run `flows2fim fim -lib "Baxter/library" -type depth -c "Baxter/controls_100yr.csv" -o "Baxter/fim_100yr.vrt"`
 

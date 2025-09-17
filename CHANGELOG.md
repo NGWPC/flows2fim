@@ -23,7 +23,7 @@
 *Compatible with outputs from Ripple1D version unknown to 0.7.0*
 
 - Fix bug that was assuming no data value -9999.0 for all raster types, the no data value is now inferred from FIM library rasters
-- An error is raised in `fim` command when control file is empty
+- An error is raised in `fim` command when controls file is empty
 
 ### 0.2.0
 *Compatible with outputs from Ripple1D pipeline version unknown to 0.7.0*
