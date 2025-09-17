@@ -46,7 +46,7 @@
 
 2. **Setup flows2fim**
     - **Option 1 - Download**
-        - Go to the [**Releases**](https://github.com/NGWPC/flows2fim/releases) page and download the `flows2fim-linux-amd64.tar.gz`
+        - Go to the [**Releases**](https://github.com/NGWPC/flows2fim/releases) page and download the `flows2fim-linux-<your-cpu-arch>.tar.gz`
         - Extract it and move to a directory in `$PATH` (e.g., `/usr/local/bin`) and make it executable:
             ```bash
             tar -xvf flows2fim-linux-amd64.tar.gz
@@ -122,7 +122,7 @@
             ```bash
             xattr -d com.apple.quarantine /usr/local/bin/flows2fim
             ```
-        
+
     - **Option 2 - Build from source**
         - cd into root of repository
         - Build container

@@ -498,7 +498,7 @@ fim_test_cases() {
                 -type depth \
                 -o $fim_test_outputs/fim_test.tif &> "$tempfile"
         # Assign error string
-        expected_error_substring="no records in control file"
+        expected_error_substring="no records in controls file"
         # Search (grep) for expected error substring in temporary output file
         if grep -q "$expected_error_substring" "$tempfile"; then
             printf "\t \u2714 Correct error thrown. \n\n"

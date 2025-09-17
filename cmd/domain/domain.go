@@ -52,7 +52,7 @@ func Run(args []string) (gdalArgs []string, err error) {
 
 	// Define flags using flags.StringVar
 	flags.StringVar(&fimLibDir, "lib", "", "Directory containing FIM Library. GDAL VSI paths can be used, given GDAL must have access to cloud creds")
-	flags.StringVar(&reachesFile, "r", "", "Path to the reaches list CSV file (control file can also be used as long as first column is reach_id)")
+	flags.StringVar(&reachesFile, "r", "", "Path to the reaches list CSV file (controls file can also be used as long as first column is reach_id)")
 	flags.StringVar(&outputFormat, "fmt", "VRT", "Output format: 'VRT', 'COG' or 'GTIFF'") // follows GDAL format names, case insensitive
 	flags.StringVar(&outputFile, "o", "", "Output domain file path")
 

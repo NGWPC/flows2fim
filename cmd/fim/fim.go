@@ -120,7 +120,11 @@ func Run(args []string) (gdalArgs []string, err error) {
 	}
 
 	if len(records) < 2 {
-		return []string{}, fmt.Errorf("no records in control file")
+		return []string{}, fmt.Errorf("no records in controls file")
+	}
+
+	if len(records[1]) < 3 {
+		return []string{}, fmt.Errorf("not enough columns in controls file, need at least 3")
 	}
 
 	var domainFiles, fimFiles []string
