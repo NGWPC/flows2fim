@@ -2,6 +2,13 @@
 - Binary build for `linux-arm64` has been added as part of release
 - Enhanced error reporting
 
+Build Support Matrix:
+| OS \ ARCH      | AMD64       | ARM64       |
+| :------------- | :---------: | :---------: |
+| **Linux**      | ✅          | ✅          |
+| **MacOS**      |             | ✅          |
+| **Windows**    | ✅          |             |
+
 ### 0.4.0
 *Compatible with outputs from Ripple1D Pipeline version 0.10.3 to present*
 
