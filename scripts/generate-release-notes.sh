@@ -49,10 +49,6 @@ fi
 # Get the previous tag
 PREV_TAG=$(git describe --tags --abbrev=0 $TAG_NAME^ 2>/dev/null || echo "")
 
-# Start building release notes
-echo "# Release $TAG_NAME" > release_notes.md
-echo "" >> release_notes.md
-
 # Extract changelog section (Keep a Changelog format)
 if [ -f "CHANGELOG.md" ]; then
   echo "## What's Changed" >> release_notes.md
