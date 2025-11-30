@@ -5,17 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.0.1-test] - 2025-11-26
+## [Unreleased]
 
 ### Added
 
-- Test Changelog updates with automated release.
+### Changed
 
-## [0.0.0-test] - 2025-11-26
+### Removed
 
-### Added
-
-- .github/workflows/release.yml
+### Fixed
 
 ## [0.4.1] - 2025-09-17
 
@@ -74,14 +72,14 @@ Build Support Matrix:
 
 - Bug in `fim` command on extent libraries that was causing gaps in composite FIMs
 
-## [0.2.1] - 2024-11-15
+## 0.2.1 - 2024-11-15
 
 ### Fixed
 
 - Bug that was assuming no data value of -9999.0 for all raster types - no data value is now inferred from FIM library rasters
 - Error now raised in `fim` command when controls file is empty
 
-## [0.2.0] - 2024-11-01
+## 0.2.0 - 2024-11-01
 
 **Note:** Compatible with outputs from Ripple1D pipeline version unknown to 0.7.0
 
@@ -95,7 +93,7 @@ Build Support Matrix:
 
 - COG (Cloud Optimized GeoTIFF) option for `fim` command
 
-## [0.1.0] - 2024-12-18
+## 0.1.0 - 2024-12-18
 
 ### Added
 
@@ -111,3 +109,6 @@ Build Support Matrix:
 - Multi-platform binary support (Linux AMD64, macOS ARM64, Windows AMD64)
 
 **Note:** This initial release is based on the archived repository at [NGWPC/flows2fim-archive](https://github.com/NGWPC/flows2fim-archive/releases/tag/v0.1.0)
+
+
+[Unreleased]: https://github.com/NGWPC/flows2fim/compare/v0.4.1...HEAD

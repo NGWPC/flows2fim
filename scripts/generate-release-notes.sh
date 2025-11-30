@@ -46,8 +46,11 @@ else
   fi
 fi
 
-# Get the previous tag
-PREV_TAG=$(git describe --tags --abbrev=0 $TAG_NAME^ 2>/dev/null || echo "")
+# Filter the tag list to only inclued previous 'versioned' tag
+PREV_TAG=$(git tag --sort=-version:refname --merged $TAG_NAME^ 2>/dev/null | \
+  grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | \
+  grep -v "^$TAG_NAME$" | \
+  head -n 1 || echo "")
 
 # Extract changelog section (Keep a Changelog format)
 if [ -f "CHANGELOG.md" ]; then
