@@ -190,7 +190,7 @@ jobs:
 
     - name: Generate release notes
       id: release_notes
-      run: ./scripts/generate-release-notes.sh "$GITHUB_REF" "${{ github.repository }}" "$GITHUB_OUTPUT"
+      run: ./.github/scripts/generate-release-notes.sh "$GITHUB_REF" "${{ github.repository }}" "$GITHUB_OUTPUT"
 
     - name: Create Release
       uses: softprops/action-gh-release@v2
