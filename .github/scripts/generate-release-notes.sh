@@ -88,14 +88,35 @@ if [ -f "CHANGELOG.md" ]; then
       if (/^\[.*\]:/) exit
       print
     }
+
+    # Output found status at the end
+    END { print "FOUND=" found }
   ' CHANGELOG.md > changelog_section.tmp
+
+  # Extract the FOUND status from the last line
+  FOUND_STATUS=$(tail -n 1 changelog_section.tmp | grep "^FOUND=" | cut -d= -f2)
+
+  # Remove the FOUND status line from the temp file
+  if grep -q "^FOUND=" changelog_section.tmp; then
+    sed -i.bak '$d' changelog_section.tmp
+    rm -f changelog_section.tmp.bak
+  fi
+
+  # Check if version was found in changelog
+  if [ "$FOUND_STATUS" != "1" ]; then
+    echo "Error: Version $VERSION_NUM not found in CHANGELOG.md"
+    echo "Please add an entry for version $VERSION_NUM to CHANGELOG.md before creating a release."
+    rm -f changelog_section.tmp
+    exit 1
+  fi
 
   if [ -s changelog_section.tmp ]; then
     cat changelog_section.tmp >> release_notes.md
     echo "" >> release_notes.md
   else
-    echo " No changelog entry found for version $VERSION_NUM in CHANGELOG.md" >> release_notes.md
-    echo "" >> release_notes.md
+    echo "Error: Changelog entry for version $VERSION_NUM is empty"
+    rm -f changelog_section.tmp
+    exit 1
   fi
   rm -f changelog_section.tmp
 fi

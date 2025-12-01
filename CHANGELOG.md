@@ -9,7 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- .github/scripts/generate-release-notes.sh - helper script to GHA workflow
+- .github/workflows/release.yml - GHA workflow to automate releases
+- scripts/create-release-binaries.sh - separate binary creation script - add error messaging and exit codes for use in GHA workflow
+
 ### Changed
+
+- CHANGELOG.md - adhere to [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) standard
+- scripts/create-release-assets.sh - seperate release assets and binaries creation, mkdir release_assets/ directory as part of script, and add checksum generation
 
 ### Removed
 
