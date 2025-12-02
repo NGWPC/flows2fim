@@ -1,27 +1,35 @@
+# Changelog
+
 All notable changes to this project will be documented in this file.
-We follow the [Semantic Versioning 2.0.0](http://semver.org/) format.
 
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## x.y.z - YYYY-MM-DD
+## [Unreleased]
 
 ### Added
 
-- Lorem ipsum dolor sit amet
+- .github/scripts/generate-release-notes.sh - helper script to GHA workflow
+- .github/workflows/release.yml - GHA workflow to automate releases
+- scripts/create-release-binaries.sh - separate binary creation script - add error messaging and exit codes for use in GHA workflow
 
-### Deprecated
+### Changed
 
-- Nothing.
+- CHANGELOG.md - adhere to [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) standard
+- scripts/create-release-assets.sh - seperate release assets and binaries creation, mkdir release_assets/ directory as part of script, and add checksum generation
 
 ### Removed
 
-- Nothing.
-
 ### Fixed
 
-- Nothing.
-### 0.4.1
-- Binary build for `linux-arm64` has been added as part of release
+## [0.4.1] - 2025-09-17
+
+### Added
+
+- Binary build for `linux-arm64` platform added to releases
 - Enhanced error reporting
+
+### Changed
 
 Build Support Matrix:
 | OS \ ARCH      | AMD64       | ARM64       |
@@ -30,37 +38,84 @@ Build Support Matrix:
 | **MacOS**      |             | ✅          |
 | **Windows**    | ✅          |             |
 
-### 0.4.0
-*Compatible with outputs from Ripple1D Pipeline version 0.10.3 to present*
+## [0.4.0] - 2025-05-15
 
-- A new command `domain` has been added to create a composite domain map for the given reaches.
-- Format of extent library has been modified, this is to improve performance of `fim` command. This changes API and default output for `fim` command. Argument `-type depth|extent` is not required now. Argument `--with_domain` must be added if domain should be added as background in composite map.
-- `fmt` argument for `fim` command now have `GTiff` option for GTiff format not `tif`. This is to be consistent with the GDAL raster drivers short names.
-- flows2fim no longer need GDAL version 3.8.0 or greater when working with extent libraries. Any version above 3.4.0 should work.
+**Note:** Compatible with outputs from Ripple1D Pipeline version 0.10.3 to present
 
-### 0.3.0
-*Compatible with outputs from Ripple1D Pipeline version unknown to 0.7.0*
+### Added
 
-- A new command `validate` has been added to validate FIM libraries (stored locally or on cloud) against rating curves table in a database. See Install.md for details on how to set it up
-- Configuration through environment variables has been added
-- Structured logging has been added. Following env variables control logging:
-  - `F2F_LOG_LEVEL`: Set the logging level. Options are 'DEBUG', 'INFO', 'WARN', and 'ERROR'. Default is 'INFO'
+- New `domain` command to create a composite domain map for the given reaches
+
+### Changed
+
+- Format of extent library modified to improve performance of `fim` command
+- API and default output for `fim` command changed - argument `-type depth|extent` is no longer required
+- Argument `--with_domain` must now be added if domain should be included as background in composite map
+- `fmt` argument for `fim` command now uses `GTiff` option for GTiff format (not `tif`) to be consistent with GDAL raster drivers short names
+- GDAL version requirement relaxed - now works with GDAL 3.4.0 or greater (previously required 3.8.0+)
+
+## [0.3.0] - 2025-03-26
+
+**Note:** Compatible with outputs from Ripple1D Pipeline version unknown to 0.7.0
+
+### Added
+
+- New `validate` command to validate FIM libraries (stored locally or on cloud) against rating curves table in a database. See Install.md for setup details
+- Configuration through environment variables:
+  - `F2F_LOG_LEVEL`: Set logging level ('DEBUG', 'INFO', 'WARN', 'ERROR'). Default is 'INFO'
   - `F2F_NO_COLOR`: Set to 'TRUE' to disable colored output. Default is 'FALSE'
-- A bug has been fixed for `fim` command on extent libraries that was causing gaps in composite FIMs. This changes API for `fim` command. Argument `-type depth|extent` is required now.
-- `-rel` argument from `fim` command is removed
-- flows2fim need a version of GDAL 3.8.0 or greater when working with extent libraries
+- Structured logging support
 
+### Changed
 
-### 0.2.1
-- Fix bug that was assuming no data value -9999.0 for all raster types, the no data value is now inferred from FIM library rasters
-- An error is raised in `fim` command when controls file is empty
+- API for `fim` command modified - argument `-type depth|extent` is now required
+- GDAL version requirement increased to 3.8.0 or greater when working with extent libraries
 
-### 0.2.0
-*Compatible with outputs from Ripple1D pipeline version unknown to 0.7.0*
+### Removed
 
-- Default db table name changed from `conflation` to `network`
+- `-rel` argument from `fim` command
+
+### Fixed
+
+- Bug in `fim` command on extent libraries that was causing gaps in composite FIMs
+
+## 0.2.1 - 2024-11-15
+
+### Fixed
+
+- Bug that was assuming no data value of -9999.0 for all raster types - no data value is now inferred from FIM library rasters
+- Error now raised in `fim` command when controls file is empty
+
+## 0.2.0 - 2024-11-01
+
+**Note:** Compatible with outputs from Ripple1D pipeline version unknown to 0.7.0
+
+### Changed
+
+- Default database table name changed from `conflation` to `network`
 - Default `to_id` name changed from `conflation_to_id` to `updated_to_id`
-- No more warnings for when stage difference is because of normal depth higher than target stage
-- Add COG option for `fim` command
+- Removed warnings for when stage difference is because of normal depth higher than target stage
 
-### 0.1.0
+### Added
+
+- COG (Cloud Optimized GeoTIFF) option for `fim` command
+
+## 0.1.0 - 2024-12-18
+
+### Added
+
+- Command-line utility for generating composite Flood Inundation Maps (FIMs) under varying flow conditions
+- Core commands:
+  - `controls`: Process flow files with rating curve data to generate control tables containing reach flows and downstream boundary conditions
+  - `fim`: Combine control tables with FIM library folders to produce flood inundation maps matching specified flow conditions
+  - `domain`: Generate composite domain maps from reach identifier lists or control tables using FIM library data
+- FIM library support for local and cloud-stored libraries
+- Rating curve database integration
+- GDAL-based geospatial operations
+- Support for English units with flow values in cubic feet per second (cfs)
+- Multi-platform binary support (Linux AMD64, macOS ARM64, Windows AMD64)
+
+**Note:** This initial release is based on the archived repository at [NGWPC/flows2fim-archive](https://github.com/NGWPC/flows2fim-archive/releases/tag/v0.1.0)
+
+
+[Unreleased]: https://github.com/NGWPC/flows2fim/compare/v0.4.1...HEAD
