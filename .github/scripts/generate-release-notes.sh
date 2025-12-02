@@ -161,8 +161,6 @@ echo "\`\`\`bash" >> release_notes.md
 echo "# Pull the image" >> release_notes.md
 echo "docker pull ghcr.io/$GITHUB_REPOSITORY:${TAG_NAME#v}" >> release_notes.md
 echo "" >> release_notes.md
-echo "# Or use latest" >> release_notes.md
-echo "docker pull ghcr.io/$GITHUB_REPOSITORY:latest" >> release_notes.md
 echo "\`\`\`" >> release_notes.md
 echo "" >> release_notes.md
 
