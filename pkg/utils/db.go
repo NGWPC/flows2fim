@@ -76,7 +76,8 @@ func CheckScenariosTable(db *sql.DB) error {
 	if noMap {
 		return fmt.Errorf(
 			"database has a '%[1]s' table, which flows2fim 0.5.0 merged into '%[2]s'. "+
-				"Regenerate the database with a matching ripple1d-pipeline release, or merge it in place with:\n"+
+				"Regenerate the database with a matching ripple1d-pipeline release, or merge it in place with "+
+				"  PRAGMA foreign_keys = OFF;\n"+
 				"  ALTER TABLE %[2]s ADD COLUMN %[3]s BOOL CHECK(%[3]s IN (0, 1));\n"+
 				"  UPDATE %[2]s SET %[3]s = 1;\n"+
 				"  INSERT INTO %[2]s (reach_id, us_flow, us_depth, us_wse, ds_depth, ds_wse, boundary_condition, %[3]s)\n"+

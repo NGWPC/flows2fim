@@ -145,11 +145,6 @@ func ConnectDB(dbPath string) (*sql.DB, error) {
 		return nil, err
 	}
 
-	if err := utils.CheckScenariosTable(db); err != nil {
-		db.Close()
-		return nil, err
-	}
-
 	slog.Debug("Database connection established")
 	return db, nil
 }
@@ -421,6 +416,11 @@ func Run(args []string) (err error) {
 	db, err := ConnectDB(dbPath)
 	if err != nil {
 		return fmt.Errorf("error connecting to database: %v", err)
+	}
+	defer db.Close()
+
+	if err := utils.CheckScenariosTable(db); err != nil {
+		return err
 	}
 
 	results, err := TraverseUpstream(db, flows, startReaches)

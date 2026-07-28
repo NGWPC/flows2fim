@@ -536,6 +536,8 @@ func Run(args []string) error {
 	if err != nil {
 		return fmt.Errorf("error opening DB: %v", err)
 	}
+
+	slog.Debug("Database connection established")
 	defer db.Close()
 
 	if err := utils.CheckScenariosTable(db); err != nil {
