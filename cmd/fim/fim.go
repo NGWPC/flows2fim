@@ -127,9 +127,34 @@ func Run(args []string) (gdalArgs []string, err error) {
 		return []string{}, fmt.Errorf("not enough columns in controls file, need at least 3")
 	}
 
+	// Locate map_exists by header name rather than position, so additional
+	// columns can be added to the controls file later without breaking this.
+	mapExistsIdx := -1
+	for i, name := range records[0] {
+		if strings.TrimSpace(name) == "map_exists" {
+			mapExistsIdx = i
+			break
+		}
+	}
+	if mapExistsIdx == -1 {
+		slog.Warn("controls file has no map_exists column; assuming every record has a map", "file", controlsFile)
+	}
+
 	var domainFiles, fimFiles []string
+	var skipped int
 	for _, record := range records[1:] { // Skip header row
 		reachID := record[0]
+
+		// Records without a depth grid are hydraulically correct but have no raster
+		// to composite, so they are left out of the VRT rather than pointing at a
+		// file that does not exist.
+		if mapExistsIdx != -1 && mapExistsIdx < len(record) {
+			if mapExists := strings.TrimSpace(record[mapExistsIdx]); mapExists == "0" || strings.EqualFold(mapExists, "false") {
+				slog.Debug("Skipping record with no map", "reach_id", reachID, "flow", record[1], "control_stage", record[2])
+				skipped++
+				continue
+			}
+		}
 
 		record[2] = strings.Replace(record[2], ".", "_", -1) // Replace '.' with '_'
 		folderPath := filepath.Join(absFimLibPath, reachID, fmt.Sprintf("z_%s", record[2]))
@@ -147,6 +172,13 @@ func Run(args []string) (gdalArgs []string, err error) {
 		if withDomain {
 			domainFiles = append(domainFiles, absDomainPath)
 		}
+	}
+
+	if skipped > 0 {
+		slog.Debug("Excluded records with no map from the composite", "count", skipped, "included", len(fimFiles))
+	}
+	if len(fimFiles) == 0 {
+		return []string{}, fmt.Errorf("no records in controls file have a map; nothing to composite")
 	}
 
 	// Write file paths to a temporary file

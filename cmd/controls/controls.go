@@ -29,6 +29,7 @@ Database file must have a table 'scenarios' and contain following coloumns
         ds_depth REAL
         ds_wse REAL
         boundary_condition TEXT CHECK(boundary_condition IN ('nd','kwse'))
+        map_exists BOOL CHECK(map_exists IN (0, 1))
         UNIQUE(reach_id, us_flow, ds_wse, boundary_condition)
 
 Database file must have a table 'network' and contain following coloumns
@@ -55,12 +56,14 @@ type ScenarioRecord struct {
 	Stage             float32
 	ControlReachStage float32
 	BoundaryCondition string
+	MapExists         bool
 }
 
 type ResultRecord struct {
 	ReachID              int
 	Flow                 int
 	ControlReachStageStr string
+	MapExists            bool
 }
 
 func ReadFlows(filePath string) (map[int]float32, error) {
@@ -142,11 +145,6 @@ func ConnectDB(dbPath string) (*sql.DB, error) {
 		return nil, err
 	}
 
-	if err := utils.CheckScenariosTable(db); err != nil {
-		db.Close()
-		return nil, err
-	}
-
 	slog.Debug("Database connection established")
 	return db, nil
 }
@@ -182,7 +180,7 @@ func FetchUpstreamReaches(db *sql.DB, controlReachID int) ([]int, error) {
 
 func FetchNormalDepthFlowStage(db *sql.DB, reachID int, flow float32) (ScenarioRecord, error) {
 	row := db.QueryRow(`
-		SELECT us_flow, us_wse, ds_wse
+		SELECT us_flow, us_wse, ds_wse, map_exists
 		FROM scenarios
 		WHERE reach_id = ?
 		AND boundary_condition = 'nd'
@@ -192,7 +190,7 @@ func FetchNormalDepthFlowStage(db *sql.DB, reachID int, flow float32) (ScenarioR
 	)
 
 	var scenario ScenarioRecord
-	if err := row.Scan(&scenario.Flow, &scenario.Stage, &scenario.ControlReachStage); err != nil {
+	if err := row.Scan(&scenario.Flow, &scenario.Stage, &scenario.ControlReachStage, &scenario.MapExists); err != nil {
 		// Check if the error is because of no rows
 		if err == sql.ErrNoRows {
 			// No rows found, not an error in this context
@@ -208,14 +206,14 @@ func FetchNormalDepthFlowStage(db *sql.DB, reachID int, flow float32) (ScenarioR
 
 func FetchNearestFlowStage(db *sql.DB, reachID int, flow, controlStage float32) (ScenarioRecord, error) {
 	row := db.QueryRow(`
-	SELECT us_flow, us_wse, ds_wse, boundary_condition
+	SELECT us_flow, us_wse, ds_wse, boundary_condition, map_exists
 	FROM scenarios
 	WHERE reach_id = ?
 	ORDER BY ABS(us_flow - ? ), ABS(ds_wse - ?)
 	LIMIT 1;
 	`, reachID, flow, controlStage)
 	var scenario ScenarioRecord
-	if err := row.Scan(&scenario.Flow, &scenario.Stage, &scenario.ControlReachStage, &scenario.BoundaryCondition); err != nil {
+	if err := row.Scan(&scenario.Flow, &scenario.Stage, &scenario.ControlReachStage, &scenario.BoundaryCondition, &scenario.MapExists); err != nil {
 		// Check if the error is because of no rows
 		if err == sql.ErrNoRows {
 			// No rows found, not an error in this context
@@ -290,7 +288,7 @@ func TraverseUpstream(db *sql.DB, flows map[int]float32, startReaches []ControlD
 			}
 		}
 
-		result := ResultRecord{ReachID: scenario.ReachID, Flow: scenario.Flow}
+		result := ResultRecord{ReachID: scenario.ReachID, Flow: scenario.Flow, MapExists: scenario.MapExists}
 		if scenario.BoundaryCondition == "nd" {
 			result.ControlReachStageStr = "nd"
 		} else {
@@ -304,6 +302,8 @@ func TraverseUpstream(db *sql.DB, flows map[int]float32, startReaches []ControlD
 	return results, nil
 }
 
+// WriteCSV writes the control table. The map_exists column is appended last so
+// that positional readers of the first three columns are unaffected.
 func WriteCSV(data []ResultRecord, filePath string) error {
 	file, err := os.Create(filePath)
 	if err != nil {
@@ -313,12 +313,17 @@ func WriteCSV(data []ResultRecord, filePath string) error {
 
 	writer := csv.NewWriter(file)
 	defer writer.Flush()
-	if err := writer.Write([]string{"reach_id", "flow", "control_stage"}); err != nil {
+
+	if err := writer.Write([]string{"reach_id", "flow", "control_stage", "map_exists"}); err != nil {
 		return err
 	}
 
 	for _, d := range data {
-		record := []string{strconv.Itoa(d.ReachID), fmt.Sprint(d.Flow), d.ControlReachStageStr}
+		mapExists := "0"
+		if d.MapExists {
+			mapExists = "1"
+		}
+		record := []string{strconv.Itoa(d.ReachID), fmt.Sprint(d.Flow), d.ControlReachStageStr, mapExists}
 		if err := writer.Write(record); err != nil {
 			return err
 		}
@@ -411,6 +416,11 @@ func Run(args []string) (err error) {
 	db, err := ConnectDB(dbPath)
 	if err != nil {
 		return fmt.Errorf("error connecting to database: %v", err)
+	}
+	defer db.Close()
+
+	if err := utils.CheckScenariosTable(db); err != nil {
+		return err
 	}
 
 	results, err := TraverseUpstream(db, flows, startReaches)
