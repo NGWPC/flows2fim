@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `controls` and `validate` now fail with an actionable message when the database has a pre-0.5.0 `rating_curves_no_map` table exists
 - `controls` output file now has a `map_exists` column
 - `fim` leaves records whose `map_exists` is `0` out of the composite. If the controls file has no `map_exists` column, it warns about that and includes every record
+- `validate` now has a third check and a `-o_unexpected_fims` flag (default `unexpected_fims.csv`), listing FIM files whose scenario records have `map_exists = 0`, that is, a raster exists where the database says none was written
 - .github/scripts/generate-release-notes.sh - helper script to GHA workflow
 - .github/workflows/release.yml - GHA workflow to automate releases
 - scripts/create-release-binaries.sh - separate binary creation script - add error messaging and exit codes for use in GHA workflow
@@ -24,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **BREAKING** - the database table read by `controls` and `validate` is renamed from `rating_curves` to `scenarios`. These records are computed model scenarios (a discharge, plus a downstream stage for `kwse`, with the resulting water surface elevations), not rating curves; a rating curve is a discharge-vs-depth relationship at a point. Requires a database produced by the corresponding ripple1d / ripple1d-pipeline release. There is no fallback to the old table name
 - **BREAKING** - `validate` flag `-o_rcs` is renamed to `-o_scenarios`, and its default output file changes from `missing_rating_curves.csv` to `missing_scenarios.csv`
 - `controls` output header is now `reach_id,flow,control_stage,map_exists`. The new column is appended last, so readers of the first three columns (including `flows2fim domain`) are unaffected
+- `validate` progress messages now read `Number of <what> records found` and `File for <what> created at`, since not every check reports something missing
 - CHANGELOG.md - adhere to [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) standard
 - scripts/create-release-assets.sh - seperate release assets and binaries creation, mkdir release_assets/ directory as part of script, and add checksum generation
 

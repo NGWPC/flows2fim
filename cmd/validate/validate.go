@@ -25,6 +25,13 @@ validate there is one to one correspondence between the entries of scenarios tab
 GDAL VSI paths can be used, given GDAL must have access to cloud creds.
 Intermediate folders for output files are created if they do not exist.
 
+Correspondence is judged against map_exists, which records whether a depth grid was
+written for the scenario. Three disagreements are reported, each to its own CSV:
+        o_fims             scenarios with map_exists=1 that have no FIM file
+        o_scenarios        FIM files with no scenario record at all
+        o_unexpected_fims  FIM files whose scenario says map_exists=0
+Scenarios with map_exists=0 and no FIM file are the expected case and are not reported.
+
 FIM Library Specifications:
 - All maps should have same CRS, Resolution, vertical units (if any), and nodata value
 - Should have following folder structure:
@@ -49,6 +56,7 @@ Database file must have a table 'scenarios' and contain following columns
         ds_depth REAL
         ds_wse REAL
         boundary_condition TEXT CHECK(boundary_condition IN ('nd','kwse'))
+        map_exists BOOL CHECK(map_exists IN (0, 1))
         UNIQUE(reach_id, us_flow, ds_wse, boundary_condition)
 
 
@@ -65,6 +73,7 @@ const (
 	);
 	`
 
+	// Only scenarios whose depth grid was written are expected to have a FIM.
 	queryMissingFims = `
 	SELECT
 		s.reach_id,
@@ -84,8 +93,34 @@ const (
 			AND s.boundary_condition = f.boundary_condition)
 	WHERE
 		f.reach_id IS NULL
+		AND s.map_exists = 1
 	ORDER BY
 		s.reach_id, s.boundary_condition, s.ds_wse, s.us_flow;
+	`
+
+	// The mirror of the above: a raster is present even though the database says
+	// no depth grid was written for that scenario.
+	queryUnexpectedFims = `
+	SELECT
+		f.reach_id,
+		f.us_flow,
+		f.ds_wse,
+		f.boundary_condition
+	FROM
+		memdb.fim_entries f
+	JOIN
+		scenarios s
+		ON (f.reach_id = s.reach_id
+			AND f.us_flow = s.us_flow
+			AND f.ds_wse = (CASE
+					WHEN f.boundary_condition = 'nd' THEN 0
+					ELSE s.ds_wse
+				END)
+			AND f.boundary_condition = s.boundary_condition)
+	WHERE
+		s.map_exists = 0
+	ORDER BY
+		f.reach_id, f.boundary_condition, f.ds_wse, f.us_flow;
 	`
 
 	queryMissingScenarios = `
@@ -460,18 +495,20 @@ func Run(args []string) error {
 	}
 
 	var (
-		dbPath       string
-		fimLibDir    string
-		outFims      string
-		outScenarios string
-		concurrent   int
-		skipEmpty    bool
+		dbPath            string
+		fimLibDir         string
+		outFims           string
+		outScenarios      string
+		outUnexpectedFims string
+		concurrent        int
+		skipEmpty         bool
 	)
 
 	flags.StringVar(&dbPath, "db", "", "Path to the scenarios database file")
 	flags.StringVar(&fimLibDir, "lib", "", "Path to the FIM library directory")
-	flags.StringVar(&outFims, "o_fims", "missing_fims.csv", "Output CSV for scenario entries missing corresponding FIM files")
+	flags.StringVar(&outFims, "o_fims", "missing_fims.csv", "Output CSV for scenario entries with map_exists=1 missing corresponding FIM files")
 	flags.StringVar(&outScenarios, "o_scenarios", "missing_scenarios.csv", "Output CSV for FIM entries missing corresponding scenario records")
+	flags.StringVar(&outUnexpectedFims, "o_unexpected_fims", "unexpected_fims.csv", "Output CSV for FIM entries whose scenario records have map_exists=0")
 	flags.IntVar(&concurrent, "cc", 25, "Concurrent Count, number of top-level reach directories to process concurrently (default 25)")
 	flags.BoolVar(&skipEmpty, "skip_empty", false, "If true, do not create an empty output CSV file")
 
@@ -597,8 +634,9 @@ func Run(args []string) error {
 		query   string
 		label   string
 	}{
-		{outFims, queryMissingFims, "FIMs"},
-		{outScenarios, queryMissingScenarios, "Scenarios"},
+		{outFims, queryMissingFims, "missing FIMs"},
+		{outScenarios, queryMissingScenarios, "missing scenarios"},
+		{outUnexpectedFims, queryUnexpectedFims, "unexpected FIMs"},
 	}
 	for _, task := range tasks {
 		rows, err := db.Query(task.query)
@@ -611,9 +649,9 @@ func Run(args []string) error {
 		if err != nil {
 			return fmt.Errorf("error writing %s: %v", task.outFile, err)
 		}
-		fmt.Printf("Number of missing %s records found: %d\n", task.label, rowCount)
+		fmt.Printf("Number of %s records found: %d\n", task.label, rowCount)
 		if rowCount > 0 || !skipEmpty {
-			fmt.Printf("Missing %s file created at %s\n", task.label, task.outFile)
+			fmt.Printf("File for %s created at %s\n", task.label, task.outFile)
 		}
 	}
 
