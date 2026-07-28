@@ -170,7 +170,7 @@ compare_directories() {
 
 # Define functions for each flows2fim method
 controls_test_cases() {
-    local num_test_cases_controls=9
+    local num_test_cases_controls=10
     local failed_controls_testcases=0
     total_count=$(( total_count + num_test_cases_controls))
     # If previous directory exists, remove it
@@ -351,12 +351,36 @@ controls_test_cases() {
         rm "$temp_out"
         rm "$tempfile"
 
+    printf "(10/${num_test_cases_controls})\t>>>> Scenario without a map is still selected, and reported as map_exists=0 <<<<\n\n"
+        # The reference database holds one scenario with map_exists=0 at a flow of
+        # 70000. Asking for that flow makes it the hydraulically nearest record, so
+        # it must still be chosen: whether a depth grid was written says nothing
+        # about which scenario is correct.
+        temp_flows=$(mktemp)
+        temp_out=$(mktemp)
+        printf "reach_id,flow\n24274741,70000\n" > "$temp_flows"
+        # Test case
+        $cmd controls -db $db_path/ripple.gpkg \
+            -f "$temp_flows" \
+            -o "$temp_out" \
+            -scsv $start_reaches_dir/start_reaches.csv &> /dev/null
+        # The mapless scenario should be the one picked, flagged with a trailing 0
+        if grep -q "^24274741,70000,nd,0$" "$temp_out"; then
+            printf "\t ✔ Passed: mapless scenario selected and flagged map_exists=0. \n\n"
+        else
+            printf "\t ❌ Failed: expected 24274741,70000,nd,0 in controls file, got: $(tail -n 1 "$temp_out") \n\n"
+            failed_controls_testcases=$((failed_controls_testcases + 1))
+        fi
+        # Remove temp files
+        rm "$temp_flows"
+        rm "$temp_out"
+
     controls_passed=$((num_test_cases_controls - failed_controls_testcases))
     total_passed=$(( total_passed + controls_passed))
 }
 
 fim_test_cases() {
-    local num_test_cases_fim=8
+    local num_test_cases_fim=10
     local failed_fim_testcases=0
     total_count=$(( total_count + num_test_cases_fim))
     # If previous directories exists, remove them
@@ -509,7 +533,59 @@ fim_test_cases() {
         # Remove temp file
         rm "$tempfile"
 
-    #printf "(9/${num_test_cases_fim})\t>>>> Test flows2fim fim pull from S3 <<<<\n\n"
+    printf "(9/${num_test_cases_fim})\t>>>> Records with map_exists=0 are left out of the composite <<<<\n\n"
+        # Create and assign temp files
+        tempfile=$(mktemp)
+        temp_controls=$(mktemp)
+        # Only record is flagged as having no map, so there is nothing left to
+        # composite. fim must say so rather than handing GDAL a missing raster.
+        printf "reach_id,flow,control_stage,map_exists\n24274741,17668,nd,0\n" > "$temp_controls"
+        # Test case
+        $cmd fim \
+                -c "$temp_controls" \
+                -fmt $format \
+                -lib $library_benchmark \
+                -o $fim_test_outputs/fim_no_map.tif &> "$tempfile"
+        # Assign error string
+        expected_error_substring="no records in controls file have a map"
+        # Search (grep) for expected error substring in temporary output file
+        if grep -q "$expected_error_substring" "$tempfile"; then
+            printf "\t ✔ Correct error thrown. \n\n"
+        else
+            printf "\t ❌ Error messaging inconsistent \n\n"
+            failed_fim_testcases=$((failed_fim_testcases + 1))
+        fi
+        # Remove temp files
+        rm "$tempfile"
+        rm "$temp_controls"
+
+    printf "(10/${num_test_cases_fim})\t>>>> Controls file without a map_exists coloumn warns and includes every record <<<<\n\n"
+        # Create and assign temp files
+        tempfile=$(mktemp)
+        temp_controls=$(mktemp)
+        # Controls files written before 0.5.0 have no map_exists coloumn. They must
+        # keep working, with a warning that map existence is unknown.
+        printf "reach_id,flow,control_stage\n24274741,17668,nd\n" > "$temp_controls"
+        # Test case
+        $cmd fim \
+                -c "$temp_controls" \
+                -fmt $format \
+                -lib $library_benchmark \
+                -o $fim_test_outputs/fim_no_coloumn.tif &> "$tempfile"
+        # Assign warning string
+        expected_warning_substring="controls file has no map_exists column"
+        # Warning must be raised and the composite must still be produced
+        if grep -q "$expected_warning_substring" "$tempfile" && [ -f "$fim_test_outputs/fim_no_coloumn.tif" ]; then
+            printf "\t ✔ Passed: warning raised and composite created. \n\n"
+        else
+            printf "\t ❌ Failed: expected warning and a composite file \n\n"
+            failed_fim_testcases=$((failed_fim_testcases + 1))
+        fi
+        # Remove temp files
+        rm "$tempfile"
+        rm "$temp_controls"
+
+    #printf "(11/${num_test_cases_fim})\t>>>> Test flows2fim fim pull from S3 <<<<\n\n"
 
     fim_passed=$((num_test_cases_fim - failed_fim_testcases))
     total_passed=$(( total_passed + fim_passed))
