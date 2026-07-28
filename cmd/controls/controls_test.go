@@ -29,8 +29,8 @@ func TestReadFlows(t *testing.T) {
 			wantErr:  true,
 		},
 		{
-			name:      "reach_id and flow coloumn swapped",
-			filePath:  "/app/testdata/unit_tests/flow_files/coloumns_swapped.csv",
+			name:      "reach_id and flow column swapped",
+			filePath:  "/app/testdata/unit_tests/flow_files/columns_swapped.csv",
 			wantFlows: map[int]float32{},
 			wantErr:   false,
 		},

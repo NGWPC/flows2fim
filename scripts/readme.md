@@ -7,4 +7,4 @@ Contains scripts for various build, install, test, and other operational tasks.
 - **Automation**: Add scripts for automating common development, build, and deployment tasks.
 
 ## Usage
-This folder provides hosuing for utility scripts to streamline development workflows.
+This folder provides housing for utility scripts to streamline development workflows.

@@ -27,7 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `controls` output header is now `reach_id,flow,control_stage,map_exists`. The new column is appended last, so readers of the first three columns (including `flows2fim domain`) are unaffected
 - `validate` progress messages now read `Number of <what> records found` and `File for <what> created at`, since not every check reports something missing
 - CHANGELOG.md - adhere to [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) standard
-- scripts/create-release-assets.sh - seperate release assets and binaries creation, mkdir release_assets/ directory as part of script, and add checksum generation
+- scripts/create-release-assets.sh - separate release assets and binaries creation, mkdir release_assets/ directory as part of script, and add checksum generation
 
 ### Removed
 

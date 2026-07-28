@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#       This script provies a comprehensive test suite of the built flows2fim executable on
+#       This script provides a comprehensive test suite of the built flows2fim executable on
 #       linux systems, also including regression tests. This script, as well as testdata/reference_data
 #       will need to be manually updated as features change. See testdata/readme.md for more information
 #       on how to update the /testdata directory appropriately.
@@ -415,7 +415,7 @@ fim_test_cases() {
         # Capture the output of the compare_directories function as a variable
         diff_output=$(compare_directories "$fim_test_outputs" "$fim_benchmark_dir" "fim")
 
-        # If there is no differnce, test pass
+        # If there is no difference, test pass
         if [ -z "$diff_output" ]; then
             printf "\t \u2714 No significant difference in fim.tif files. \n\n"
         else
@@ -559,11 +559,11 @@ fim_test_cases() {
         rm "$tempfile"
         rm "$temp_controls"
 
-    printf "(10/${num_test_cases_fim})\t>>>> Controls file without a map_exists coloumn warns and includes every record <<<<\n\n"
+    printf "(10/${num_test_cases_fim})\t>>>> Controls file without a map_exists column warns and includes every record <<<<\n\n"
         # Create and assign temp files
         tempfile=$(mktemp)
         temp_controls=$(mktemp)
-        # Controls files written before 0.5.0 have no map_exists coloumn. They must
+        # Controls files written before 0.5.0 have no map_exists column. They must
         # keep working, with a warning that map existence is unknown.
         printf "reach_id,flow,control_stage\n24274741,17668,nd\n" > "$temp_controls"
         # Test case
@@ -571,11 +571,11 @@ fim_test_cases() {
                 -c "$temp_controls" \
                 -fmt $format \
                 -lib $library_benchmark \
-                -o $fim_test_outputs/fim_no_coloumn.tif &> "$tempfile"
+                -o $fim_test_outputs/fim_no_column.tif &> "$tempfile"
         # Assign warning string
         expected_warning_substring="controls file has no map_exists column"
         # Warning must be raised and the composite must still be produced
-        if grep -q "$expected_warning_substring" "$tempfile" && [ -f "$fim_test_outputs/fim_no_coloumn.tif" ]; then
+        if grep -q "$expected_warning_substring" "$tempfile" && [ -f "$fim_test_outputs/fim_no_column.tif" ]; then
             printf "\t ✔ Passed: warning raised and composite created. \n\n"
         else
             printf "\t ❌ Failed: expected warning and a composite file \n\n"
