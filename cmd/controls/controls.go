@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/csv"
 	"flag"
+	"flows2fim/pkg/utils"
 	"fmt"
 	"log/slog"
 	"math"
@@ -20,7 +21,7 @@ Given a flow file and a reach database. Create controls table of reach flows and
 
 Flow file's first coloumn values must be reach ids, and second coloumn must be discharges in cfs. Invalid lines are skipped.
 
-Database file must have a table 'rating_curves' and contain following coloumns
+Database file must have a table 'scenarios' and contain following coloumns
         reach_id INTEGER
         us_flow REAL
         us_depth REAL
@@ -48,7 +49,7 @@ type ControlData struct {
 	NormalDepth       bool
 }
 
-type RatingCurveRecord struct {
+type ScenarioRecord struct {
 	ReachID           int
 	Flow              int
 	Stage             float32
@@ -141,6 +142,11 @@ func ConnectDB(dbPath string) (*sql.DB, error) {
 		return nil, err
 	}
 
+	if err := utils.CheckScenariosTable(db); err != nil {
+		db.Close()
+		return nil, err
+	}
+
 	slog.Debug("Database connection established")
 	return db, nil
 }
@@ -174,10 +180,10 @@ func FetchUpstreamReaches(db *sql.DB, controlReachID int) ([]int, error) {
 	return upstreamReaches, nil
 }
 
-func FetchNormalDepthFlowStage(db *sql.DB, reachID int, flow float32) (RatingCurveRecord, error) {
+func FetchNormalDepthFlowStage(db *sql.DB, reachID int, flow float32) (ScenarioRecord, error) {
 	row := db.QueryRow(`
 		SELECT us_flow, us_wse, ds_wse
-		FROM rating_curves
+		FROM scenarios
 		WHERE reach_id = ?
 		AND boundary_condition = 'nd'
 		ORDER BY ABS(us_flow - ? )
@@ -185,40 +191,40 @@ func FetchNormalDepthFlowStage(db *sql.DB, reachID int, flow float32) (RatingCur
 		reachID, flow,
 	)
 
-	var rc RatingCurveRecord
-	if err := row.Scan(&rc.Flow, &rc.Stage, &rc.ControlReachStage); err != nil {
+	var scenario ScenarioRecord
+	if err := row.Scan(&scenario.Flow, &scenario.Stage, &scenario.ControlReachStage); err != nil {
 		// Check if the error is because of no rows
 		if err == sql.ErrNoRows {
 			// No rows found, not an error in this context
-			return RatingCurveRecord{}, nil
+			return ScenarioRecord{}, nil
 		}
-		return RatingCurveRecord{}, err
+		return ScenarioRecord{}, err
 	}
-	rc.ReachID = reachID
-	rc.BoundaryCondition = "nd"
-	slog.Debug("Fetched normal depth flow stage", "reach_id", reachID, "flow", rc.Flow)
-	return rc, nil
+	scenario.ReachID = reachID
+	scenario.BoundaryCondition = "nd"
+	slog.Debug("Fetched normal depth flow stage", "reach_id", reachID, "flow", scenario.Flow)
+	return scenario, nil
 }
 
-func FetchNearestFlowStage(db *sql.DB, reachID int, flow, controlStage float32) (RatingCurveRecord, error) {
+func FetchNearestFlowStage(db *sql.DB, reachID int, flow, controlStage float32) (ScenarioRecord, error) {
 	row := db.QueryRow(`
 	SELECT us_flow, us_wse, ds_wse, boundary_condition
-	FROM rating_curves
+	FROM scenarios
 	WHERE reach_id = ?
 	ORDER BY ABS(us_flow - ? ), ABS(ds_wse - ?)
 	LIMIT 1;
 	`, reachID, flow, controlStage)
-	var rc RatingCurveRecord
-	if err := row.Scan(&rc.Flow, &rc.Stage, &rc.ControlReachStage, &rc.BoundaryCondition); err != nil {
+	var scenario ScenarioRecord
+	if err := row.Scan(&scenario.Flow, &scenario.Stage, &scenario.ControlReachStage, &scenario.BoundaryCondition); err != nil {
 		// Check if the error is because of no rows
 		if err == sql.ErrNoRows {
 			// No rows found, not an error in this context
-			return RatingCurveRecord{}, nil
+			return ScenarioRecord{}, nil
 		}
-		return RatingCurveRecord{}, err
+		return ScenarioRecord{}, err
 	}
-	rc.ReachID = reachID
-	return rc, nil
+	scenario.ReachID = reachID
+	return scenario, nil
 }
 
 func TraverseUpstream(db *sql.DB, flows map[int]float32, startReaches []ControlData) (results []ResultRecord, err error) {
@@ -235,35 +241,35 @@ func TraverseUpstream(db *sql.DB, flows map[int]float32, startReaches []ControlD
 			flow = 0
 		}
 
-		var rc RatingCurveRecord
+		var scenario ScenarioRecord
 		if current.NormalDepth {
-			rc, err = FetchNormalDepthFlowStage(db, current.ReachID, flow)
+			scenario, err = FetchNormalDepthFlowStage(db, current.ReachID, flow)
 			if err != nil {
-				return []ResultRecord{}, fmt.Errorf("error fetching rating curve for reach %d: %v", current.ReachID, err)
+				return []ResultRecord{}, fmt.Errorf("error fetching scenario for reach %d: %v", current.ReachID, err)
 			}
 		} else {
-			rc, err = FetchNearestFlowStage(db, current.ReachID, flow, current.ControlReachStage)
+			scenario, err = FetchNearestFlowStage(db, current.ReachID, flow, current.ControlReachStage)
 			if err != nil {
-				return []ResultRecord{}, fmt.Errorf("error fetching rating curve for reach %d: %v", current.ReachID, err)
+				return []ResultRecord{}, fmt.Errorf("error fetching scenario for reach %d: %v", current.ReachID, err)
 			}
-			if math.Abs(float64(rc.ControlReachStage)-float64(current.ControlReachStage)) > 1 && // difference is greater than 1
-				rc.ReachID != 0 &&
-				!(float64(rc.ControlReachStage) > float64(current.ControlReachStage) && rc.BoundaryCondition == "nd") { // sometimes the difference can be because the d/s stage is lower than `nd` stage for this reach, so ignore that condition
+			if math.Abs(float64(scenario.ControlReachStage)-float64(current.ControlReachStage)) > 1 && // difference is greater than 1
+				scenario.ReachID != 0 &&
+				!(float64(scenario.ControlReachStage) > float64(current.ControlReachStage) && scenario.BoundaryCondition == "nd") { // sometimes the difference can be because the d/s stage is lower than `nd` stage for this reach, so ignore that condition
 				slog.Warn("Large difference in target vs found control reach stage",
 					"reach_id", current.ReachID,
 					"target", current.ControlReachStage,
-					"found", rc.ControlReachStage,
-					"boundary_condition", rc.BoundaryCondition,
+					"found", scenario.ControlReachStage,
+					"boundary_condition", scenario.BoundaryCondition,
 				)
 			}
 		}
 
 		// to do: ignore this warning if reach is near lake
-		if math.Abs(float64(flow)-float64(rc.Flow))/float64(flow) > 0.25 && rc.ReachID != 0 { // difference is greater than 25%
+		if math.Abs(float64(flow)-float64(scenario.Flow))/float64(flow) > 0.25 && scenario.ReachID != 0 { // difference is greater than 25%
 			slog.Warn("Large difference in target vs found flow",
 				"reach_id", current.ReachID,
 				"target", flow,
-				"found", rc.Flow,
+				"found", scenario.Flow,
 			)
 		}
 
@@ -273,22 +279,22 @@ func TraverseUpstream(db *sql.DB, flows map[int]float32, startReaches []ControlD
 			return []ResultRecord{}, fmt.Errorf("error fetching upstream reaches for %d: %v", current.ReachID, err)
 		}
 
-		if rc.ReachID == 0 { // no rating curve record found, add upstream reaches with NormalDepth condition
+		if scenario.ReachID == 0 { // no scenario record found, add upstream reaches with NormalDepth condition
 			for _, u := range upstream {
-				queue = append(queue, ControlData{ReachID: u, ControlReachStage: rc.Stage, NormalDepth: true})
+				queue = append(queue, ControlData{ReachID: u, ControlReachStage: scenario.Stage, NormalDepth: true})
 			}
 			continue // no result to add
 		} else {
 			for _, u := range upstream {
-				queue = append(queue, ControlData{ReachID: u, ControlReachStage: rc.Stage})
+				queue = append(queue, ControlData{ReachID: u, ControlReachStage: scenario.Stage})
 			}
 		}
 
-		result := ResultRecord{ReachID: rc.ReachID, Flow: rc.Flow}
-		if rc.BoundaryCondition == "nd" {
+		result := ResultRecord{ReachID: scenario.ReachID, Flow: scenario.Flow}
+		if scenario.BoundaryCondition == "nd" {
 			result.ControlReachStageStr = "nd"
 		} else {
-			result.ControlReachStageStr = fmt.Sprintf("%.1f", rc.ControlReachStage)
+			result.ControlReachStageStr = fmt.Sprintf("%.1f", scenario.ControlReachStage)
 		}
 
 		results = append(results, result)

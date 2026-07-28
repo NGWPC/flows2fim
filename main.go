@@ -22,10 +22,10 @@ var usage string = `Usage of flows2fim:
 	flows2fim COMMAND Args
 
 Available Commands:
-  - controls: Given a flow file and a rating curves database, create a control table of reach flows and downstream boundary conditions.
+  - controls: Given a flow file and a scenarios database, create a control table of reach flows and downstream boundary conditions.
   - fim: Given a control table and a fim library folder, create a flood inundation map for the control conditions.
   - domain: Given a reach_id list (or a control table) and a fim library folder, create a composite domain map for the given reaches.
-  - validate: Given a fim library folder and a rating curves database, validate there is one to one correspondence between the entries of rating curves table and fim library objects.
+  - validate: Given a fim library folder and a scenarios database, validate there is one to one correspondence between the entries of scenarios table and fim library objects.
 
 Dependencies:
   - GDAL must be installed and available in the PATH.
