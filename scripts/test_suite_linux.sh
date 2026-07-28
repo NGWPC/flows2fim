@@ -276,7 +276,7 @@ controls_test_cases() {
         # Remove temp file
         rm "$tempfile"
         # Assign error string
-        assert_file_output="reach_id,flow,control_stage"
+        assert_file_output="reach_id,flow,control_stage,map_exists"
         # Compare Error messaging and print
         if [ "$file_contents" = "$assert_file_output" ]; then
             printf "\t \u2714 Passed: Output file created and empty. \n\n"
