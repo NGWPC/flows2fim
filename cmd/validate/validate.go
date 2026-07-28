@@ -20,8 +20,8 @@ import (
 )
 
 var usage string = `Usage of validate:
-Given a fim library folder and a rating curves database,
-validate there is one to one correspondence between the entries of rating curves table and fim library objects.
+Given a fim library folder and a scenarios database,
+validate there is one to one correspondence between the entries of scenarios table and fim library objects.
 GDAL VSI paths can be used, given GDAL must have access to cloud creds.
 Intermediate folders for output files are created if they do not exist.
 
@@ -41,7 +41,7 @@ FIM Library Specifications:
 │       ├── f_111159.tif
 │       ├── f_11309.tif
 
-Database file must have a table 'rating_curves' and contain following columns
+Database file must have a table 'scenarios' and contain following columns
         reach_id INTEGER
         us_flow REAL
         us_depth REAL
@@ -67,28 +67,28 @@ const (
 
 	queryMissingFims = `
 	SELECT
-		rc.reach_id,
-		rc.us_flow,
-		rc.ds_wse,
-		rc.boundary_condition
+		s.reach_id,
+		s.us_flow,
+		s.ds_wse,
+		s.boundary_condition
 	FROM
-		rating_curves rc
+		scenarios s
 	LEFT JOIN
 		memdb.fim_entries f
-		ON (rc.reach_id = f.reach_id
-			AND rc.us_flow = f.us_flow
+		ON (s.reach_id = f.reach_id
+			AND s.us_flow = f.us_flow
 			AND (CASE
-					WHEN rc.boundary_condition = 'nd' THEN 0
-					ELSE rc.ds_wse
+					WHEN s.boundary_condition = 'nd' THEN 0
+					ELSE s.ds_wse
 				END) = f.ds_wse
-			AND rc.boundary_condition = f.boundary_condition)
+			AND s.boundary_condition = f.boundary_condition)
 	WHERE
 		f.reach_id IS NULL
 	ORDER BY
-		rc.reach_id, rc.boundary_condition, rc.ds_wse, rc.us_flow;
+		s.reach_id, s.boundary_condition, s.ds_wse, s.us_flow;
 	`
 
-	queryMissingRatingCurves = `
+	queryMissingScenarios = `
 	SELECT
 		f.reach_id,
 		f.us_flow,
@@ -97,16 +97,16 @@ const (
 	FROM
 		memdb.fim_entries f
 	LEFT JOIN
-		rating_curves rc
-		ON (f.reach_id = rc.reach_id
-			AND f.us_flow = rc.us_flow
+		scenarios s
+		ON (f.reach_id = s.reach_id
+			AND f.us_flow = s.us_flow
 			AND f.ds_wse = (CASE
 					WHEN f.boundary_condition = 'nd' THEN 0
-					ELSE rc.ds_wse
+					ELSE s.ds_wse
 				END)
-			AND f.boundary_condition = rc.boundary_condition)
+			AND f.boundary_condition = s.boundary_condition)
 	WHERE
-		rc.reach_id IS NULL
+		s.reach_id IS NULL
 	ORDER BY
 		f.reach_id, f.boundary_condition, f.ds_wse, f.us_flow;
 	`
@@ -460,18 +460,18 @@ func Run(args []string) error {
 	}
 
 	var (
-		dbPath     string
-		fimLibDir  string
-		outFims    string
-		outRcs     string
-		concurrent int
-		skipEmpty  bool
+		dbPath       string
+		fimLibDir    string
+		outFims      string
+		outScenarios string
+		concurrent   int
+		skipEmpty    bool
 	)
 
-	flags.StringVar(&dbPath, "db", "", "Path to the rating curves database file")
+	flags.StringVar(&dbPath, "db", "", "Path to the scenarios database file")
 	flags.StringVar(&fimLibDir, "lib", "", "Path to the FIM library directory")
-	flags.StringVar(&outFims, "o_fims", "missing_fims.csv", "Output CSV for rating curve entries missing corresponding FIM files")
-	flags.StringVar(&outRcs, "o_rcs", "missing_rating_curves.csv", "Output CSV for FIM entries missing corresponding rating curve records")
+	flags.StringVar(&outFims, "o_fims", "missing_fims.csv", "Output CSV for scenario entries missing corresponding FIM files")
+	flags.StringVar(&outScenarios, "o_scenarios", "missing_scenarios.csv", "Output CSV for FIM entries missing corresponding scenario records")
 	flags.IntVar(&concurrent, "cc", 25, "Concurrent Count, number of top-level reach directories to process concurrently (default 25)")
 	flags.BoolVar(&skipEmpty, "skip_empty", false, "If true, do not create an empty output CSV file")
 
@@ -500,6 +500,10 @@ func Run(args []string) error {
 		return fmt.Errorf("error opening DB: %v", err)
 	}
 	defer db.Close()
+
+	if err := utils.CheckScenariosTable(db); err != nil {
+		return err
+	}
 
 	// 2) Attach an in-memory DB for fim_entries
 	_, err = db.Exec(`ATTACH ':memory:' AS memdb;`)
@@ -594,7 +598,7 @@ func Run(args []string) error {
 		label   string
 	}{
 		{outFims, queryMissingFims, "FIMs"},
-		{outRcs, queryMissingRatingCurves, "Rating Curves"},
+		{outScenarios, queryMissingScenarios, "Scenarios"},
 	}
 	for _, task := range tasks {
 		rows, err := db.Query(task.query)
