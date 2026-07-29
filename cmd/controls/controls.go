@@ -19,9 +19,9 @@ import (
 var usage string = `Usage of controls:
 Given a flow file and a reach database. Create controls table of reach flows and downstream boundary conditions.
 
-Flow file's first coloumn values must be reach ids, and second coloumn must be discharges in cfs. Invalid lines are skipped.
+Flow file's first column values must be reach ids, and second column must be discharges in cfs. Invalid lines are skipped.
 
-Database file must have a table 'scenarios' and contain following coloumns
+Database file must have a table 'scenarios' and contain following columns
         reach_id INTEGER
         us_flow REAL
         us_depth REAL
@@ -32,7 +32,7 @@ Database file must have a table 'scenarios' and contain following coloumns
         map_exists BOOL CHECK(map_exists IN (0, 1))
         UNIQUE(reach_id, us_flow, ds_wse, boundary_condition)
 
-Database file must have a table 'network' and contain following coloumns
+Database file must have a table 'network' and contain following columns
         reach_id INTEGER
         updated_to_id INTEGER
 
@@ -346,7 +346,7 @@ func Run(args []string) (err error) {
 	)
 	flags.StringVar(&dbPath, "db", "", "Path to the database file")
 	flags.StringVar(&flowsFilePath, "f", "", "Path to the input flows CSV file")
-	flags.StringVar(&startReachesCSV, "scsv", "", "Path to the CSV file containing starting reach IDs and control stages (Coloumn headers do not matter)")
+	flags.StringVar(&startReachesCSV, "scsv", "", "Path to the CSV file containing starting reach IDs and control stages (Column headers do not matter)")
 	flags.StringVar(&startReachIDsStr, "sids", "", "Comma-separated list of starting reach IDs (One of -sids or -scsv is required, if both are provided, -sids and -scs flags are ignored)")
 	flags.StringVar(&startControlStagesStr, "scs", "nd", "Comma-separated list of starting control stages (corresponding to the reach IDs)")
 	flags.StringVar(&outputFilePath, "o", "", "Path to the output controls CSV file")
