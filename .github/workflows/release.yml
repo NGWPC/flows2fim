@@ -168,7 +168,7 @@ jobs:
       id: release_notes
       run: ./.github/scripts/generate-release-notes.sh "$GITHUB_REF" "${{ github.repository }}" "$GITHUB_OUTPUT"
 
-    - name: Create Release
+    - name: Create Draft Release
       uses: softprops/action-gh-release@v2
       with:
         name: Release ${{ steps.release_notes.outputs.tag_name }}
@@ -179,5 +179,12 @@ jobs:
           release-assets/flows2fim-linux-arm64.tar.gz
           release-assets/flows2fim-windows-amd64.zip
           release-assets/checksums.txt
+        draft: true
+        prerelease: ${{ steps.release_notes.outputs.is_prerelease == 'true' }}
+
+    - name: Publish Release
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: ${{ steps.release_notes.outputs.tag_name }}
         draft: false
         prerelease: ${{ steps.release_notes.outputs.is_prerelease == 'true' }}
