@@ -7,12 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0-rc.1] - 2026-07-30
+
 **Note:** Compatible with outputs from Ripple1D Pipeline version 0.11.0 (the release containing the `scenarios` rename) to present. Not compatible with earlier outputs, which carry a `rating_curves` table instead, see the Changed section below.
 
 ### Added
 
 - `controls` and `validate` now fail with an actionable message when the database has a pre-0.5.0 `rating_curves` table instead of `scenarios`
-- `controls` and `validate` now fail with an actionable message when the database has a pre-0.5.0 `rating_curves_no_map` table exists
+- `controls` and `validate` now fail with an actionable message when the database has a pre-0.5.0 `rating_curves_no_map` table
 - `controls` output file now has a `map_exists` column
 - `fim` leaves records whose `map_exists` is `0` out of the composite. If the controls file has no `map_exists` column, it warns about that and includes every record
 - `validate` now has a third check and a `-o_unexpected_fims` flag (default `unexpected_fims.csv`), listing FIM files whose scenario records have `map_exists = 0`, that is, a raster exists where the database says none was written
@@ -43,11 +45,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 Build Support Matrix:
-| OS \ ARCH      | AMD64       | ARM64       |
-| :------------- | :---------: | :---------: |
-| **Linux**      | ✅          | ✅          |
-| **MacOS**      |             | ✅          |
-| **Windows**    | ✅          |             |
+
+| OS \ ARCH   | AMD64 | ARM64 |
+| :---------- | :---: | :---: |
+| **Linux**   | ✅    | ✅    |
+| **MacOS**   |       | ✅    |
+| **Windows** | ✅    |       |
 
 ## [0.4.0] - 2025-05-15
 
@@ -73,8 +76,8 @@ Build Support Matrix:
 
 - New `validate` command to validate FIM libraries (stored locally or on cloud) against rating curves table in a database. See Install.md for setup details
 - Configuration through environment variables:
-  - `F2F_LOG_LEVEL`: Set logging level ('DEBUG', 'INFO', 'WARN', 'ERROR'). Default is 'INFO'
-  - `F2F_NO_COLOR`: Set to 'TRUE' to disable colored output. Default is 'FALSE'
+    - `F2F_LOG_LEVEL`: Set logging level ('DEBUG', 'INFO', 'WARN', 'ERROR'). Default is 'INFO'
+    - `F2F_NO_COLOR`: Set to 'TRUE' to disable colored output. Default is 'FALSE'
 - Structured logging support
 
 ### Changed
@@ -117,9 +120,9 @@ Build Support Matrix:
 
 - Command-line utility for generating composite Flood Inundation Maps (FIMs) under varying flow conditions
 - Core commands:
-  - `controls`: Process flow files with rating curve data to generate control tables containing reach flows and downstream boundary conditions
-  - `fim`: Combine control tables with FIM library folders to produce flood inundation maps matching specified flow conditions
-  - `domain`: Generate composite domain maps from reach identifier lists or control tables using FIM library data
+    - `controls`: Process flow files with rating curve data to generate control tables containing reach flows and downstream boundary conditions
+    - `fim`: Combine control tables with FIM library folders to produce flood inundation maps matching specified flow conditions
+    - `domain`: Generate composite domain maps from reach identifier lists or control tables using FIM library data
 - FIM library support for local and cloud-stored libraries
 - Rating curve database integration
 - GDAL-based geospatial operations
@@ -128,5 +131,5 @@ Build Support Matrix:
 
 **Note:** This initial release is based on the archived repository at [NGWPC/flows2fim-archive](https://github.com/NGWPC/flows2fim-archive/releases/tag/v0.1.0)
 
-
-[Unreleased]: https://github.com/NGWPC/flows2fim/compare/v0.4.1...HEAD
+[Unreleased]: https://github.com/NGWPC/flows2fim/compare/v0.5.0-rc.1...HEAD
+[0.5.0.rc.1]: https://github.com/NGWPC/flows2fim/compare/v0.4.1...v0.5.0-rc.1
