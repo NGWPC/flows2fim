@@ -183,8 +183,6 @@ jobs:
         prerelease: ${{ steps.release_notes.outputs.is_prerelease == 'true' }}
 
     - name: Publish Release
-      uses: softprops/action-gh-release@v2
-      with:
-        tag_name: ${{ steps.release_notes.outputs.tag_name }}
-        draft: false
-        prerelease: ${{ steps.release_notes.outputs.is_prerelease == 'true' }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: gh release edit "${{ steps.release_notes.outputs.tag_name }}" --draft=false
