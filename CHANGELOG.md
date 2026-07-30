@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.5.0-rc.1] - 2026-07-30
+## [0.5.0-rc.2] - 2026-07-30
 
 **Note:** Compatible with outputs from Ripple1D Pipeline version 0.11.0 (the release containing the `scenarios` rename) to present. Not compatible with earlier outputs, which carry a `rating_curves` table instead, see the Changed section below.
 
@@ -131,5 +131,5 @@ Build Support Matrix:
 
 **Note:** This initial release is based on the archived repository at [NGWPC/flows2fim-archive](https://github.com/NGWPC/flows2fim-archive/releases/tag/v0.1.0)
 
-[Unreleased]: https://github.com/NGWPC/flows2fim/compare/v0.5.0-rc.1...HEAD
-[0.5.0.rc.1]: https://github.com/NGWPC/flows2fim/compare/v0.4.1...v0.5.0-rc.1
+[Unreleased]: https://github.com/NGWPC/flows2fim/compare/v0.5.0-rc.2...HEAD
+[0.5.0.rc.1]: https://github.com/NGWPC/flows2fim/compare/v0.4.1...v0.5.0-rc.2
