@@ -59,7 +59,7 @@ if [ -f "CHANGELOG.md" ]; then
 
   # Look for version with ## [Version] format (Keep a Changelog standard)
   awk -v version="$VERSION_NUM" '
-    BEGIN { found=0; in_section=0 }
+    BEGIN { found=0; in_section=0; release_title="" }
 
     # Match version headers with ## [version] format
     /^## \[/ {
@@ -75,6 +75,11 @@ if [ -f "CHANGELOG.md" ]; then
         if (ver == version) {
           found=1
           in_section=1
+          # Extract the full line after ## [version]
+          # Example: ## [0.2.1] - 2025-12-03 -> v0.2.1 - 2025-12-03
+          sub(/^## \[/, "", $0)
+          sub(/\]/, "", $0)
+          release_title = "v" $0
           next  # Skip the header itself
         }
       }
@@ -89,18 +94,20 @@ if [ -f "CHANGELOG.md" ]; then
       print
     }
 
-    # Output found status at the end
-    END { print "FOUND=" found }
+    # Output found status and title at the end
+    END {
+      print "FOUND=" found
+      print "RELEASE_TITLE=" release_title
+    }
   ' CHANGELOG.md > changelog_section.tmp
 
-  # Extract the FOUND status from the last line
-  FOUND_STATUS=$(tail -n 1 changelog_section.tmp | grep "^FOUND=" | cut -d= -f2)
+  # Extract the FOUND status and RELEASE_TITLE from the last two lines
+  RELEASE_TITLE=$(tail -n 1 changelog_section.tmp | grep "^RELEASE_TITLE=" | cut -d= -f2-)
+  FOUND_STATUS=$(tail -n 2 changelog_section.tmp | head -n 1 | grep "^FOUND=" | cut -d= -f2)
 
-  # Remove the FOUND status line from the temp file
-  if grep -q "^FOUND=" changelog_section.tmp; then
-    sed -i.bak '$d' changelog_section.tmp
-    rm -f changelog_section.tmp.bak
-  fi
+  # Remove the FOUND/RELEASE_TITLE status lines from the temp file
+  head -n -2 changelog_section.tmp > changelog_section_clean.tmp
+  mv changelog_section_clean.tmp changelog_section.tmp
 
   # Check if version was found in changelog
   if [ "$FOUND_STATUS" != "1" ]; then
@@ -108,6 +115,11 @@ if [ -f "CHANGELOG.md" ]; then
     echo "Please add an entry for version $VERSION_NUM to CHANGELOG.md before creating a release."
     rm -f changelog_section.tmp
     exit 1
+  fi
+
+  # Output release title to GitHub Actions
+  if [ -n "$GITHUB_OUTPUT" ] && [ -n "$RELEASE_TITLE" ]; then
+    echo "release_title=$RELEASE_TITLE" >> "$GITHUB_OUTPUT"
   fi
 
   if [ -s changelog_section.tmp ]; then
